@@ -115,6 +115,48 @@ BRIDGE_EXPLAINER = (
     "regions, this neuron is one of just a few cells carrying it."
 )
 
+# Description templates — rotated across the cards in a section so peer-group
+# context isn't repeated identically on every card. The section header already
+# carries the "what it means" framing; cards focus on the per-cell specifics.
+_DEGREE_HIGH_TEMPLATES = [
+    "{n} synaptic partners — {z:.1f}σ above the typical {peer} cell "
+    "(peer average ≈ {mean}). A wiring fan this dense usually means "
+    "hub-like integration across many input streams.",
+
+    "About {ratio} the typical {peer} count, with {n} partners. Cells this "
+    "far out on the high end often sit at circuit bottlenecks where "
+    "multiple streams converge.",
+
+    "{n} partners places this neuron in the extreme tail of {peer} cells "
+    "(σ = {z:.1f}). The unusual fan-in or fan-out is the kind of signature "
+    "that asks for a functional role.",
+]
+
+_DEGREE_LOW_TEMPLATES = [
+    "Only {n} synaptic partners — {z:.1f}σ below the typical {peer} cell "
+    "(peer average ≈ {mean}). Cells this sparse often serve a narrow, "
+    "specific role rather than broad integration.",
+
+    "About {ratio} the typical {peer} count, with just {n} partners. A "
+    "wiring pattern this lean tends to mean a private channel, not a hub.",
+
+    "{n} partners is far below the {peer} cohort (σ = {z:.1f}). Sparse "
+    "wiring like this often points to a dedicated, single-purpose cell.",
+]
+
+
+def _format_int_compact(n: int) -> str:
+    return f"{n:,}"
+
+
+def _ratio_phrase(degree: float, mean: float) -> str:
+    if mean <= 0:
+        return ""
+    r = degree / mean
+    if r >= 1:
+        return f"{r:.1f}× more than"
+    return f"{1/r:.1f}× fewer than"
+
 
 def score_degree_outliers(neuron_db) -> List[SurpriseCard]:
     """Z-score each neuron's total partner count (input_cells + output_cells)
@@ -128,7 +170,7 @@ def score_degree_outliers(neuron_db) -> List[SurpriseCard]:
         degree = (nd.get("input_cells") or 0) + (nd.get("output_cells") or 0)
         by_peer[peer].append((rid, degree))
 
-    cards: List[SurpriseCard] = []
+    pre_cards: List[Tuple[float, dict]] = []
     for peer, entries in by_peer.items():
         if len(entries) < MIN_PEER_GROUP_SIZE:
             continue
@@ -140,50 +182,66 @@ def score_degree_outliers(neuron_db) -> List[SurpriseCard]:
             z = (degree - mean) / std
             if abs(z) < DEGREE_Z_THRESHOLD:
                 continue
-            nd = neuron_db.neuron_data[rid]
-            direction = "more" if z > 0 else "fewer"
-            ratio_str = _format_ratio(degree, mean)
-            headline = (
-                f"Wired to {ratio_str} partners than typical {peer} cells."
-                if ratio_str
-                else f"Wired {abs(z):.1f}σ above the typical {peer} cell."
-            )
-            description = (
-                f"Most {peer} cells in the FlyWire connectome have around "
-                f"{int(mean)} synaptic partners. This one has {int(degree)} — "
-                f"a {direction}-than-typical wiring pattern that is "
-                f"{abs(z):.1f} standard deviations from the peer average. "
-                f"Cells this far from their cohort are usually doing something "
-                f"unusual: integrating across more inputs, fanning out wider, "
-                f"or sitting at a circuit bottleneck."
-            )
-            cards.append(SurpriseCard(
-                root_id=rid,
-                name=nd.get("name") or str(rid),
-                cell_type=_primary_cell_type(nd) or "",
-                super_class=nd.get("super_class") or "",
-                nt_type=nd.get("nt_type") or "",
-                side=nd.get("side") or "",
-                signal="degree_outlier",
-                signal_label="Connectivity outlier",
-                signal_explainer=DEGREE_EXPLAINER,
-                headline=headline,
-                description=description,
-                detail=(
-                    f"z = {z:+.2f}, total partners = {int(degree)}, "
-                    f"peer mean = {mean:.1f}, σ = {std:.1f}, "
-                    f"n = {len(entries)} peers, group = {peer}."
-                ),
-                score=abs(z),
-                peer_group=peer,
-                input_neuropils=list(nd.get("input_neuropils") or []),
-                output_neuropils=list(nd.get("output_neuropils") or []),
-                input_cells=int(nd.get("input_cells") or 0),
-                output_cells=int(nd.get("output_cells") or 0),
-            ))
+            pre_cards.append((abs(z), {
+                "rid": rid, "peer": peer, "degree": degree,
+                "mean": mean, "std": std, "z": z, "n_peers": len(entries),
+            }))
 
-    cards.sort(key=lambda c: c.score, reverse=True)
-    return cards[:TOP_N_PER_SIGNAL]
+    pre_cards.sort(key=lambda t: t[0], reverse=True)
+    top = pre_cards[:TOP_N_PER_SIGNAL]
+
+    cards: List[SurpriseCard] = []
+    high_idx = low_idx = 0
+    for _, p in top:
+        rid = p["rid"]; peer = p["peer"]; degree = p["degree"]
+        mean = p["mean"]; std = p["std"]; z = p["z"]
+        nd = neuron_db.neuron_data[rid]
+        ratio_str = _format_ratio(degree, mean)
+        headline = (
+            f"Wired to {ratio_str} partners than typical {peer} cells."
+            if ratio_str
+            else f"Wired {abs(z):.1f}σ above the typical {peer} cell."
+        )
+        ratio_phrase = _ratio_phrase(degree, mean)
+        if z > 0:
+            tpl = _DEGREE_HIGH_TEMPLATES[high_idx % len(_DEGREE_HIGH_TEMPLATES)]
+            high_idx += 1
+        else:
+            tpl = _DEGREE_LOW_TEMPLATES[low_idx % len(_DEGREE_LOW_TEMPLATES)]
+            low_idx += 1
+        description = tpl.format(
+            n=_format_int_compact(int(degree)),
+            mean=_format_int_compact(int(mean)),
+            z=abs(z),
+            peer=peer,
+            ratio=ratio_phrase or f"{degree/mean:.1f}× the typical",
+        )
+        cards.append(SurpriseCard(
+            root_id=rid,
+            name=nd.get("name") or str(rid),
+            cell_type=_primary_cell_type(nd) or "",
+            super_class=nd.get("super_class") or "",
+            nt_type=nd.get("nt_type") or "",
+            side=nd.get("side") or "",
+            signal="degree_outlier",
+            signal_label="Connectivity outlier",
+            signal_explainer=DEGREE_EXPLAINER,
+            headline=headline,
+            description=description,
+            detail=(
+                f"z = {z:+.2f}, total partners = {int(degree)}, "
+                f"peer mean = {mean:.1f}, σ = {std:.1f}, "
+                f"n = {p['n_peers']} peers, group = {peer}."
+            ),
+            score=abs(z),
+            peer_group=peer,
+            input_neuropils=list(nd.get("input_neuropils") or []),
+            output_neuropils=list(nd.get("output_neuropils") or []),
+            input_cells=int(nd.get("input_cells") or 0),
+            output_cells=int(nd.get("output_cells") or 0),
+        ))
+
+    return cards
 
 
 # ---------------------------------------------------------------------------
@@ -245,16 +303,14 @@ def score_cross_region_bridges(neuron_db) -> List[SurpriseCard]:
         # Headline stays tight (just the codes); rich roles go in the description.
         headline = f"Connects {in_np} → {out_np}."
         if n_with == 0:
-            rarity_phrase = "No other neuron in the connectome makes this same input→output pair."
+            rarity_phrase = "No other neuron in the connectome makes this same pair."
         elif n_with == 1:
-            rarity_phrase = "Only one other neuron in the connectome makes this same input→output pair."
+            rarity_phrase = "Only 1 other neuron in the connectome makes this same pair."
         else:
-            rarity_phrase = f"Only {n_with} other neurons in the connectome make this same input→output pair."
+            rarity_phrase = f"Only {n_with} other neurons in the connectome make this same pair."
         description = (
-            f"This cell takes input from {np_role(in_np)} and projects "
-            f"output to {np_role(out_np)}. {rarity_phrase} "
-            f"If a functional pathway links those regions, this neuron is "
-            f"one of the few cells carrying it."
+            f"Input from {np_role(in_np)}; output to {np_role(out_np)}. "
+            f"{rarity_phrase}"
         )
         cards.append(SurpriseCard(
             root_id=rid,
