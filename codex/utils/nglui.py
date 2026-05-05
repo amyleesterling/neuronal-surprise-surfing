@@ -239,9 +239,44 @@ def url_for_journey(current_id, trail_ids, data_version, neuron_db=None):
         color_idx = max(0, len(trail_palette) - 1 - (n_trail - 1 - i))
         segment_colors[str(rid)] = trail_palette[color_idx]
 
+    # Camera focus: aim at the centroid of all journey cells (current + trail)
+    # so as the path grows the camera frames the whole walked group, not just
+    # one cell. Without an explicit position, neuroglancer's auto-fit gets
+    # confused once we add an annotation layer (it includes the origin in its
+    # bounding box and the camera ends up looking at empty space).
+    focus_position = None
+    projection_scale = 30000
+    if neuron_db is not None:
+        positions_voxel = []
+        for rid in all_ids:
+            nd = neuron_db.neuron_data.get(rid)
+            if not nd:
+                continue
+            pos_nm = _parse_position_nm(nd.get("position"))
+            if pos_nm:
+                positions_voxel.append(_nm_to_voxel(pos_nm))
+        if positions_voxel:
+            n = len(positions_voxel)
+            focus_position = [
+                sum(p[0] for p in positions_voxel) / n,
+                sum(p[1] for p in positions_voxel) / n,
+                sum(p[2] for p in positions_voxel) / n,
+            ]
+            # Tighten the projection scale to roughly fit the spread of the
+            # cells in the path. Single cell → tight; multi-cell → wider.
+            if n > 1:
+                xs = [p[0] for p in positions_voxel]
+                ys = [p[1] for p in positions_voxel]
+                zs = [p[2] for p in positions_voxel]
+                spread = max(max(xs) - min(xs), max(ys) - min(ys), 2 * (max(zs) - min(zs)))
+                # Add a generous margin so dendrites/axons aren't clipped.
+                projection_scale = max(15000, min(40000, int(spread * 1.6 + 8000)))
+            else:
+                projection_scale = 18000
+
     config = {
         "dimensions": {"x": [1.6e-8, "m"], "y": [1.6e-8, "m"], "z": [4e-8, "m"]},
-        "projectionScale": 30000,
+        "projectionScale": projection_scale,
         "layers": [
             {
                 "source": "precomputed://gs://flywire_neuropil_meshes/whole_neuropil/brain_mesh_v3",
@@ -268,6 +303,8 @@ def url_for_journey(current_id, trail_ids, data_version, neuron_db=None):
         "selectedLayer": {"visible": False, "layer": "journey"},
         "layout": "3d",
     }
+    if focus_position is not None:
+        config["position"] = focus_position
 
     # Connection lines between journey cells: a soft visual showing which pairs
     # actually synapse on each other. Annotation source is inline JSON so no
