@@ -28,7 +28,6 @@
   a { color: inherit; }
   button { font-family: inherit; }
 
-  /* ---------- shared cosmic background ---------- */
   .cosmos-bg {
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
     background: radial-gradient(ellipse at center, rgba(28,39,66,0.55) 0%, rgba(4,6,12,1) 70%);
@@ -38,11 +37,11 @@
   .eyebrow { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.4em;
     text-transform: uppercase; color: rgba(255,255,255,0.45); }
   .display-h1 { font-family: var(--display); font-weight: 300;
-    font-size: clamp(2rem, 5vw, 3.75rem); line-height: 1.1; letter-spacing: -0.01em;
+    font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.1; letter-spacing: -0.01em;
     margin: 1rem 0 1.25rem; text-wrap: balance; }
   .display-h2 { font-family: var(--display); font-weight: 300;
-    font-size: clamp(1.5rem, 3vw, 2.25rem); line-height: 1.15; margin: 0; }
-  .lede { font-size: clamp(0.95rem,1.2vw,1.1rem); color: rgba(255,255,255,0.6);
+    font-size: clamp(1.4rem, 2.8vw, 2rem); line-height: 1.15; margin: 0; }
+  .lede { font-size: clamp(0.95rem,1.15vw,1.05rem); color: rgba(255,255,255,0.62);
     line-height: 1.7; text-wrap: balance; font-weight: 300; }
 
   .badge { display: inline-block; font-size: 0.65rem; font-weight: 500;
@@ -55,104 +54,113 @@
   .door { display: inline-flex; align-items: center; gap: 0.45rem;
     font-size: 0.85rem; padding: 0.55rem 1rem; border-radius: 999px;
     text-decoration: none; cursor: pointer;
-    background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.9);
-    border: 1px solid var(--ring); transition: all 0.25s;
+    background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.92);
+    border: 1px solid var(--ring); transition: background 0.25s, border-color 0.25s, transform 0.25s;
     pointer-events: auto; position: relative; z-index: 11; }
-  .door:hover { background: rgba(255,255,255,0.12); border-color: var(--ring-hover);
+  .door:hover { background: rgba(255,255,255,0.13); border-color: var(--ring-hover);
     transform: translateY(-1px); color: white; text-decoration: none; }
-  .door.primary { background: rgba(123,228,255,0.12); border-color: rgba(123,228,255,0.35);
+  .door.primary { background: rgba(123,228,255,0.14); border-color: rgba(123,228,255,0.4);
     color: #cce8ff; }
-  .door.primary:hover { background: rgba(123,228,255,0.22); color: white; }
+  .door.primary:hover { background: rgba(123,228,255,0.24); color: white; }
   .door .arrow { transition: transform 0.25s; }
   .door:hover .arrow { transform: translateX(3px); }
 
 
   /* =====================================================================
-     SEED MODE — entry point feed
+     SEED MODE — calm, focused: 1 hero + 6 cards
      ===================================================================== */
   .seed-bg-fade-top, .seed-bg-fade-bot {
-    position: fixed; left:0; right:0; height: 8rem; z-index: 5; pointer-events: none;
+    position: fixed; left:0; right:0; height: 7rem; z-index: 5; pointer-events: none;
   }
   .seed-bg-fade-top { top: 0; background: linear-gradient(to bottom, var(--ink-950), transparent); }
   .seed-bg-fade-bot { bottom: 0; background: linear-gradient(to top, var(--ink-950), transparent); }
 
-  .seed-main { position: relative; z-index: 10; max-width: 1200px; margin: 0 auto;
-    padding: 6rem 1.5rem 6rem; }
-  .intro { max-width: 720px; margin: 0 auto 4rem; text-align: center; }
+  .seed-main { position: relative; z-index: 10; max-width: 1180px; margin: 0 auto;
+    padding: 5rem 1.5rem 5rem; }
+  .intro { max-width: 760px; margin: 0 auto 4rem; text-align: center; }
+  .intro .lede { margin-top: 0.5rem; }
 
-  .hero { margin: 0 auto 5rem; max-width: 1080px; border-radius: 1.25rem;
+  /* --- HERO --- */
+  .hero { margin: 0 auto 5rem; max-width: 1100px; border-radius: 1.25rem;
     background: var(--card); border: 1px solid var(--ring); overflow: hidden;
     display: grid; grid-template-columns: 1fr;
-    transition: all 0.5s cubic-bezier(0.16,1,0.3,1); }
-  @media (min-width: 768px) { .hero { grid-template-columns: 1.1fr 0.9fr; } }
-  .hero:hover { background: var(--card-hover); border-color: var(--ring-hover); }
-  .hero-visual { position: relative; aspect-ratio: 4/3;
-    background: linear-gradient(135deg, rgba(123,228,255,0.05), rgba(252,192,106,0.03)); }
-  .hero-visual img { position: absolute; inset:0; width: 100%; height: 100%; object-fit: contain;
-    filter: drop-shadow(0 0 40px rgba(123,228,255,0.25)); }
-  .hero-visual::after { content:""; position:absolute; inset:0;
-    background: radial-gradient(ellipse at center, transparent 50%, rgba(4,6,12,0.7) 100%);
-    pointer-events: none; }
-  .hero-body { padding: 2.5rem 2rem; display:flex; flex-direction:column; justify-content:center; }
-  .headline { font-family: var(--display); font-weight: 300;
-    font-size: clamp(1.4rem,2.4vw,1.9rem); line-height: 1.25; margin: 1rem 0;
-    text-wrap: balance; }
-  .meta { font-size: 0.85rem; color: rgba(255,255,255,0.55); margin-bottom: 1.5rem; line-height: 1.55; }
-  .meta strong { color: rgba(255,255,255,0.8); font-weight: 500; }
-  .doors { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+    transition: border-color 0.5s, background 0.5s; }
+  @media (min-width: 880px) { .hero { grid-template-columns: 1.05fr 0.95fr; } }
+  .hero-3d {
+    position: relative; aspect-ratio: 1/1;
+    background: var(--ink-900);
+    min-height: 360px;
+  }
+  .hero-3d iframe { width: 100%; height: 100%; border: 0; display: block; background: var(--ink-950); }
+  .hero-3d-overlay {
+    position: absolute; bottom: 0.75rem; left: 0.75rem; pointer-events: none;
+    font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+    background: rgba(4,6,12,0.7); padding: 0.3rem 0.65rem; border-radius: 6px;
+    border: 1px solid var(--ring);
+  }
+  .hero-body { padding: 2.25rem 2rem; display:flex; flex-direction:column; justify-content:center; gap: 0.85rem; }
+  .hero-headline { font-family: var(--display); font-weight: 300;
+    font-size: clamp(1.5rem,2.6vw,2rem); line-height: 1.2; margin: 0; text-wrap: balance; }
+  .hero-explainer { font-size: 0.78rem; color: rgba(255,255,255,0.5);
+    line-height: 1.55; font-style: italic; border-left: 2px solid var(--ring);
+    padding: 0.25rem 0 0.25rem 0.75rem; margin: 0; }
+  .hero-description { font-size: 0.95rem; color: rgba(255,255,255,0.75);
+    line-height: 1.65; margin: 0; }
+  .hero-meta { font-size: 0.78rem; color: rgba(255,255,255,0.5); margin: 0; line-height: 1.55; }
+  .hero-meta strong { color: rgba(255,255,255,0.85); font-weight: 500; }
+  .doors { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-top: 0.4rem; }
 
-  .section { margin-top: 5rem; }
-  .section-head { display:flex; align-items:baseline; gap:1.25rem; margin-bottom:2rem; flex-wrap:wrap; }
-  .section-blurb { font-size: 0.9rem; color: rgba(255,255,255,0.5);
-    max-width: 36rem; line-height: 1.6; }
-  .grid { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  /* --- SECTION HEADERS --- */
+  .section { margin-top: 4rem; }
+  .section-head { margin-bottom: 1.75rem; max-width: 720px; }
+  .section-head h2 { margin-bottom: 0.5rem; }
+  .section-blurb { font-size: 0.92rem; color: rgba(255,255,255,0.55);
+    line-height: 1.65; margin: 0; }
 
+  /* --- CARDS (3 per section) --- */
+  .grid { display: grid; gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); }
   .card { border-radius: 1rem; background: var(--card); border: 1px solid var(--ring);
-    overflow: hidden; transition: all 0.5s cubic-bezier(0.16,1,0.3,1);
+    overflow: hidden; transition: background 0.35s, border-color 0.35s, transform 0.35s;
     display: flex; flex-direction: column; text-decoration: none; color: inherit;
     pointer-events: auto; cursor: pointer; position: relative; z-index: 11; }
   .card:hover { background: var(--card-hover); border-color: var(--ring-hover);
     transform: translateY(-2px); text-decoration: none; color: inherit; }
-  .card-visual { position: relative; aspect-ratio: 4/3;
-    background: linear-gradient(135deg, rgba(123,228,255,0.04), rgba(252,192,106,0.02));
-    overflow: hidden; }
+  .card-visual { position: relative; aspect-ratio: 1/1;
+    background: var(--ink-900); overflow: hidden; }
   .card-visual img { width: 100%; height: 100%; object-fit: contain;
     filter: drop-shadow(0 0 20px rgba(123,228,255,0.18));
-    transition: all 0.6s; }
-  .card:hover .card-visual img { filter: drop-shadow(0 0 30px rgba(123,228,255,0.3));
-    transform: scale(1.03); }
+    transition: filter 0.4s; }
+  .card:hover .card-visual img { filter: drop-shadow(0 0 30px rgba(123,228,255,0.32)); }
   .card-visual::after { content:""; position:absolute; inset:0;
-    background: radial-gradient(ellipse at center, transparent 55%, rgba(4,6,12,0.6) 100%);
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(4,6,12,0.55) 100%);
     pointer-events: none; }
-  .card-body { padding: 1.1rem 1.25rem 1.25rem; display:flex; flex-direction:column; flex:1; gap: 0.5rem; }
+  .card-body { padding: 1.1rem 1.25rem 1.25rem; display:flex; flex-direction:column; gap: 0.6rem; flex: 1; }
   .card-headline { font-family: var(--display); font-weight: 300;
     font-size: 1.05rem; line-height: 1.35; margin: 0; text-wrap: balance; }
-  .card-meta { font-size: 0.78rem; color: rgba(255,255,255,0.5); flex: 1; }
-  .card-meta strong { color: rgba(255,255,255,0.75); font-weight: 500; }
+  .card-description { font-size: 0.82rem; color: rgba(255,255,255,0.62);
+    line-height: 1.55; margin: 0;
+    display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .card-meta { font-size: 0.75rem; color: rgba(255,255,255,0.48); margin: 0; }
+  .card-meta strong { color: rgba(255,255,255,0.7); font-weight: 500; }
   .card-cta { display: flex; align-items: center; gap: 0.4rem;
-    font-size: 0.78rem; color: var(--cyan); margin-top: 0.5rem; opacity: 0.85;
-    transition: gap 0.25s; }
+    font-size: 0.78rem; color: var(--cyan); margin-top: auto; opacity: 0.85;
+    transition: gap 0.25s, opacity 0.25s; }
   .card:hover .card-cta { gap: 0.7rem; opacity: 1; }
 
-  .footer-note { margin-top: 6rem; padding-top: 3rem; max-width: 640px;
+  /* --- FOOTER --- */
+  .footer-note { margin-top: 5rem; padding-top: 3rem; max-width: 700px;
     margin-left: auto; margin-right: auto; text-align: center;
     border-top: 1px solid var(--ring); }
-  .footer-note .eyebrow { display: block; margin-bottom: 1.2rem; }
-  .footer-note p { font-size: 0.9rem; color: rgba(255,255,255,0.6);
-    line-height: 1.7; font-weight: 300; }
-  .footer-note a { color: rgba(255,255,255,0.9);
+  .footer-note .eyebrow { display: block; margin-bottom: 1rem; }
+  .footer-note p { font-size: 0.88rem; color: rgba(255,255,255,0.55);
+    line-height: 1.7; font-weight: 300; margin: 0 0 0.8rem; }
+  .footer-note a { color: rgba(255,255,255,0.85);
     text-decoration: underline; text-decoration-color: rgba(255,255,255,0.3);
     text-underline-offset: 4px; }
-  .footer-note a:hover { text-decoration-color: white; color: white; }
-
-  /* reveal stagger */
-  .reveal { opacity: 0; transform: translateY(12px);
-    animation: reveal 1s cubic-bezier(0.16,1,0.3,1) forwards; }
-  .reveal-1 { animation-delay: 0s; }
-  .reveal-2 { animation-delay: 0.08s; }
-  .reveal-3 { animation-delay: 0.16s; }
-  .reveal-4 { animation-delay: 0.24s; }
-  @keyframes reveal { to { opacity: 1; transform: translateY(0); } }
+  .footer-note a:hover { color: white; text-decoration-color: white; }
 
 
   /* =====================================================================
@@ -162,7 +170,7 @@
   .journey-shell {
     position: fixed; inset: 0; z-index: 10;
     display: grid;
-    grid-template-columns: 88px 1fr 380px;
+    grid-template-columns: 88px 1fr 400px;
     grid-template-rows: auto 1fr;
     grid-template-areas:
       "topbar  topbar    topbar"
@@ -170,7 +178,6 @@
     background: var(--ink-950);
   }
 
-  /* Top bar — current cell identity, the question */
   .topbar {
     grid-area: topbar;
     background: rgba(7,11,22,0.85);
@@ -212,7 +219,6 @@
   }
   .topbar-step-counter strong { color: var(--cyan); font-weight: 500; }
 
-  /* Left rail — breadcrumb of past cells (literal stops on the journey) */
   .trail-rail {
     grid-area: trail;
     background: rgba(4,6,12,0.6);
@@ -267,7 +273,6 @@
     flex-shrink: 0;
   }
 
-  /* Main canvas — neuroglancer iframe */
   .canvas-area {
     grid-area: canvas;
     position: relative;
@@ -287,12 +292,12 @@
     z-index: 3; pointer-events: auto;
     background: rgba(4,6,12,0.85); backdrop-filter: blur(8px);
     border: 1px solid var(--ring);
-    border-radius: 0.75rem; padding: 1rem 1.25rem;
+    border-radius: 0.75rem; padding: 0.95rem 1.1rem;
     max-width: 720px;
   }
-  .canvas-caption .badge { margin-bottom: 0.6rem; }
+  .canvas-caption .badge { margin-bottom: 0.55rem; }
   .canvas-caption .canvas-headline {
-    font-family: var(--display); font-weight: 300; font-size: 1.1rem;
+    font-family: var(--display); font-weight: 300; font-size: 1.05rem;
     line-height: 1.35; color: white; text-wrap: balance;
   }
   .canvas-caption .canvas-detail {
@@ -300,39 +305,23 @@
     line-height: 1.55;
   }
 
-  .canvas-loading {
-    position: absolute; inset: 0; display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    color: rgba(255,255,255,0.45); font-size: 0.85rem;
-    pointer-events: none; z-index: 1;
-  }
-  .canvas-loading .spinner {
-    width: 28px; height: 28px; border-radius: 50%;
-    border: 2px solid rgba(123,228,255,0.2);
-    border-top-color: var(--cyan);
-    animation: spin 0.9s linear infinite;
-    margin-bottom: 0.85rem;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* Right pane — related surprises (the next steps in the journey) */
   .related-pane {
     grid-area: related;
     background: rgba(4,6,12,0.7);
     border-left: 1px solid var(--ring);
-    padding: 1.5rem 1.25rem;
+    padding: 1.4rem 1.2rem;
     overflow-y: auto;
     display: flex; flex-direction: column; gap: 0.85rem;
   }
   .related-head { margin-bottom: 0.5rem; }
   .related-head .eyebrow { display: block; margin-bottom: 0.6rem; }
   .related-head h3 {
-    font-family: var(--display); font-weight: 300; font-size: 1.25rem;
+    font-family: var(--display); font-weight: 300; font-size: 1.2rem;
     line-height: 1.3; color: white; margin: 0;
   }
   .related-head p {
     font-size: 0.8rem; color: rgba(255,255,255,0.55);
-    line-height: 1.5; margin: 0.4rem 0 0;
+    line-height: 1.55; margin: 0.4rem 0 0;
   }
   .related-card {
     display: flex; gap: 0.85rem; align-items: stretch;
@@ -358,23 +347,27 @@
     width: 100%; height: 100%; object-fit: contain;
     filter: drop-shadow(0 0 8px rgba(123,228,255,0.2));
   }
-  .related-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+  .related-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.25rem; }
   .related-text .badge {
     font-size: 0.55rem; padding: 0.2rem 0.5rem; letter-spacing: 0.25em;
     align-self: flex-start;
   }
   .related-headline {
     font-family: var(--display); font-weight: 300;
-    font-size: 0.9rem; line-height: 1.3; color: white;
+    font-size: 0.92rem; line-height: 1.3; color: white;
     text-wrap: balance;
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   }
+  .related-reason {
+    font-size: 0.7rem; color: var(--cyan); opacity: 0.85;
+    line-height: 1.45;
+    font-style: italic;
+  }
   .related-meta {
-    font-size: 0.7rem; color: rgba(255,255,255,0.5); margin-top: 0.15rem;
+    font-size: 0.7rem; color: rgba(255,255,255,0.45); margin-top: 0.1rem;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
-  /* Mobile-ish — collapse the rails */
   @media (max-width: 900px) {
     .journey-shell { grid-template-columns: 1fr; grid-template-rows: auto 50vh auto;
       grid-template-areas: "topbar" "canvas" "related"; }
@@ -393,52 +386,57 @@
 <div class="seed-bg-fade-bot"></div>
 
 <main class="seed-main">
-  <div class="intro reveal reveal-1">
+
+  <div class="intro">
     <p class="eyebrow">Surprise Surfing</p>
     <h1 class="display-h1">Some neurons break the pattern.</h1>
     <p class="lede">
-      The connectome holds {{ num_cells }} cells and {{ num_synapses }} synapses.
+      The FlyWire connectome holds {{ num_cells }} cells.
       Most look like their peers. A few don't &mdash; and those few are where the
-      questions start. Pick a door. Each one drops you into a journey.
+      questions start. Below: one hero anomaly, plus three of each kind of pattern-breaker.
+      Pick a door.
     </p>
   </div>
 
   {% if hero %}
-  <article class="hero reveal reveal-2">
-    <div class="hero-visual">
-      <img src="{{ hero.thumbnail_gif }}" alt="{{ hero.name }}" loading="eager">
+  <article class="hero">
+    <div class="hero-3d">
+      <iframe src="{{ hero.ngl_url }}" title="3D view of {{ hero.name }}" loading="eager"></iframe>
+      <div class="hero-3d-overlay">drag to rotate &middot; scroll to zoom</div>
     </div>
     <div class="hero-body">
       <span class="badge {% if hero.signal == 'degree_outlier' %}badge-degree{% else %}badge-bridge{% endif %}">
-        {% if hero.signal == 'degree_outlier' %}Connectivity Outlier{% else %}Cross-Region Bridge{% endif %}
+        Hero anomaly &middot; {{ hero.signal_label }}
       </span>
-      <h2 class="headline">{{ hero.headline }}</h2>
-      <p class="meta">
+      <h2 class="hero-headline">{{ hero.headline }}</h2>
+      <p class="hero-explainer">{{ hero.signal_explainer }}</p>
+      <p class="hero-description">{{ hero.description }}</p>
+      <p class="hero-meta">
         <strong>{{ hero.name }}</strong>
         {% if hero.cell_type %}&middot; {{ hero.cell_type }}{% endif %}
         {% if hero.nt_type %}&middot; {{ hero.nt_type }}{% endif %}
         {% if hero.side %}&middot; {{ hero.side }}{% endif %}
-        <br><span style="color:rgba(255,255,255,0.4);font-size:0.78rem;">{{ hero.detail }}</span>
+        &middot; {{ hero.input_cells }} inputs / {{ hero.output_cells }} outputs
       </p>
       <div class="doors">
         <a class="door primary" href="{{ url_for('base.surprise', path=hero.root_id) }}">
           Begin journey here <span class="arrow">&rarr;</span>
         </a>
-        <a class="door" href="{{ hero.cell_details_url }}">
-          Cell details
-        </a>
+        <a class="door" href="{{ hero.cell_details_url }}">Cell details</a>
       </div>
     </div>
   </article>
   {% endif %}
 
   {% if degree_outliers %}
-  <section class="section reveal reveal-3">
+  <section class="section">
     <div class="section-head">
-      <h2 class="display-h2">Connectivity outliers</h2>
+      <p class="eyebrow" style="color: var(--amber);">Connectivity outliers</p>
+      <h2 class="display-h2">Wired far from typical.</h2>
       <p class="section-blurb">
-        Neurons whose total partner count is far from typical for their cell
-        type. The wiring is unusual. The question is why.
+        Cells whose total partner count is many standard deviations from the
+        average for their cell type. When wiring breaks the pattern, function
+        often does too.
       </p>
     </div>
     <div class="grid">
@@ -448,8 +446,9 @@
           <img src="{{ c.thumbnail_gif }}" alt="{{ c.name }}" loading="lazy">
         </div>
         <div class="card-body">
-          <span class="badge badge-degree">Outlier</span>
+          <span class="badge badge-degree">{{ c.signal_label }}</span>
           <h3 class="card-headline">{{ c.headline }}</h3>
+          <p class="card-description">{{ c.description }}</p>
           <p class="card-meta">
             <strong>{{ c.name }}</strong>
             {% if c.cell_type %} &middot; {{ c.cell_type }}{% endif %}
@@ -464,12 +463,14 @@
   {% endif %}
 
   {% if cross_region_bridges %}
-  <section class="section reveal reveal-4">
+  <section class="section">
     <div class="section-head">
-      <h2 class="display-h2">Cross-region bridges</h2>
+      <p class="eyebrow" style="color: var(--cyan);">Cross-region bridges</p>
+      <h2 class="display-h2">The only cells linking these regions.</h2>
       <p class="section-blurb">
-        Cells that connect input and output neuropils in combinations almost
-        nothing else does. The rarer the bridge, the louder the question.
+        Cells whose input region and output region form a pair almost no
+        other neuron makes. If a circuit links those two regions, this
+        neuron is one of just a few cells carrying it.
       </p>
     </div>
     <div class="grid">
@@ -479,8 +480,9 @@
           <img src="{{ c.thumbnail_gif }}" alt="{{ c.name }}" loading="lazy">
         </div>
         <div class="card-body">
-          <span class="badge badge-bridge">Bridge</span>
+          <span class="badge badge-bridge">{{ c.signal_label }}</span>
           <h3 class="card-headline">{{ c.headline }}</h3>
+          <p class="card-description">{{ c.description }}</p>
           <p class="card-meta">
             <strong>{{ c.name }}</strong>
             {% if c.cell_type %} &middot; {{ c.cell_type }}{% endif %}
@@ -495,24 +497,30 @@
   {% endif %}
 
   {% if not hero and not degree_outliers and not cross_region_bridges %}
-  <div class="empty" style="text-align:center; padding: 4rem 1rem; color: rgba(255,255,255,0.4);">
+  <div style="text-align:center; padding: 4rem 1rem; color: rgba(255,255,255,0.4);">
     <p class="display-h2">No surprises yet.</p>
     <p class="lede" style="margin-top: 1rem;">The scoring index is still warming. Refresh in a moment.</p>
   </div>
   {% endif %}
 
   <div class="footer-note">
-    <span class="eyebrow">About this view</span>
+    <span class="eyebrow">How the surprises are picked</span>
     <p>
-      Anomalies are computed by z-scoring each neuron's connectivity against
-      peers of the same cell type, and by ranking neuropil pairs by how rarely
-      they co-occur. Each card opens a journey: a 3D canvas you walk through,
-      with new surprises emerging from where you are.
+      Every cell is scored against its peer group on two signals:
+      total partner count (z-scored vs. same-cell-type peers), and how rare its
+      input/output neuropil pair is across the whole connectome. We surface
+      only the most extreme outliers on each signal &mdash; usually fewer than 30
+      cells out of 139,255.
     </p>
-    <p style="margin-top: 1rem;">
+    <p>
+      Each card is a door. Click any to drop into a 3D journey through the
+      brain, where related anomalies emerge from where you are.
+    </p>
+    <p style="margin-top: 1.4rem;">
       <a href="{{ url_for('base.index') }}">&larr; Back to home</a>
     </p>
   </div>
+
 </main>
 
 {# ===================================================================== #}
@@ -523,7 +531,6 @@
 
 <div class="journey-shell">
 
-  {# Top bar — present cell identity #}
   <div class="topbar">
     <div class="topbar-left">
       <a class="topbar-home" href="{{ url_for('base.surprise') }}">&larr; Surprises</a>
@@ -544,7 +551,6 @@
     </div>
   </div>
 
-  {# Left rail — past stops, literal breadcrumb #}
   <aside class="trail-rail">
     {% if trail %}
     <span class="eyebrow">trail</span>
@@ -559,16 +565,10 @@
     <div class="trail-current" title="You are here — step {{ path|length }}">&#9679;</div>
   </aside>
 
-  {# Center — the 3D canvas. The user is physically here. #}
   <div class="canvas-area">
-    <div class="canvas-loading" id="canvas-loading">
-      <div class="spinner"></div>
-      <span>Loading 3D view of {{ current.name }}{% if path|length > 1 %} and trail{% endif %}…</span>
-    </div>
     <iframe class="canvas-frame" id="canvas-frame"
             src="{{ journey_ngl_url }}"
-            title="3D journey through the connectome"
-            onload="document.getElementById('canvas-loading').style.display='none';"></iframe>
+            title="3D journey through the connectome"></iframe>
     <div class="canvas-overlay"></div>
     <div class="canvas-caption">
       <span class="badge badge-bridge">You are here</span>
@@ -577,26 +577,20 @@
         {% if current.cell_type %}— {{ current.cell_type }}{% endif %}
       </div>
       <div class="canvas-detail">
-        Drag to rotate. Scroll to zoom. The bright cell is your present;
-        dimmer cells trace where you've been.
-        {% if current.input_neuropils or current.output_neuropils %}
-        <br>
-        Inputs from: {{ current.input_neuropils|join(', ') if current.input_neuropils else '—' }}
-        &middot;
-        Outputs to: {{ current.output_neuropils|join(', ') if current.output_neuropils else '—' }}
-        {% endif %}
+        Drag to rotate. Scroll to zoom. The bright cyan cell is your present;
+        violet cells trace where you've been. Yellow lines mark synaptic links between cells in your trail.
       </div>
     </div>
   </div>
 
-  {# Right pane — what's next on the journey, contextually #}
   <aside class="related-pane">
     <div class="related-head">
       <span class="eyebrow">Where next?</span>
       <h3>Surprises near this cell</h3>
       <p>
-        Neurons connected to this one — or sharing its rare neuropil pairs —
-        that themselves break a pattern. Click any to step forward.
+        Each card below was picked because of a real link to where you are
+        now &mdash; a synaptic connection, a shared rare neuropil pair, or a
+        similar 3D shape. Click to step forward.
       </p>
     </div>
 
@@ -606,9 +600,12 @@
         <div class="related-thumb"><img src="{{ c.thumbnail_png }}" alt="{{ c.name }}" loading="lazy"></div>
         <div class="related-text">
           <span class="badge {% if c.signal == 'degree_outlier' %}badge-degree{% else %}badge-bridge{% endif %}">
-            {% if c.signal == 'degree_outlier' %}Outlier{% else %}Bridge{% endif %}
+            {{ c.signal_label }}
           </span>
           <div class="related-headline">{{ c.headline }}</div>
+          {% if c.relation_reason %}
+          <div class="related-reason">{{ c.relation_reason }}</div>
+          {% endif %}
           <div class="related-meta">{{ c.name }}{% if c.cell_type %} &middot; {{ c.cell_type }}{% endif %}</div>
         </div>
       </a>

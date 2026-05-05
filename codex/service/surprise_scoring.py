@@ -17,11 +17,12 @@ Scores are computed once per (neuron_db_id, version) and cached in process.
 """
 
 from collections import defaultdict
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, field, asdict
 from math import log, sqrt
 from typing import Dict, List, Optional, Tuple
 
 from codex import logger
+from codex.service.neuropil_meanings import role as np_role, short_role as np_short
 
 
 # ---------------------------------------------------------------------------
@@ -29,7 +30,7 @@ from codex import logger
 # ---------------------------------------------------------------------------
 MIN_PEER_GROUP_SIZE = 12          # below this, z-scores are not meaningful
 DEGREE_Z_THRESHOLD = 3.0          # 3-sigma for degree outliers
-TOP_N_PER_SIGNAL = 24             # how many cards to surface per anomaly type
+TOP_N_PER_SIGNAL = 3              # how many cards to surface per anomaly type on the landing
 TOP_N_HERO = 1                    # number of hero anomalies on the landing
 MIN_PARTNERS_FOR_BRIDGE = 50      # ignore tiny neurons for bridge scoring
 
@@ -43,7 +44,10 @@ class SurpriseCard:
     nt_type: str
     side: str
     signal: str                # "degree_outlier" | "cross_region_bridge"
-    headline: str              # one-sentence "why" — the door
+    signal_label: str          # human label, e.g. "Connectivity outlier"
+    signal_explainer: str      # one-line definition of the signal
+    headline: str              # one-sentence why — the door (short)
+    description: str           # 2-3 sentence prose explaining what's surprising
     detail: str                # raw stats for experts
     score: float               # surprise magnitude (sortable)
     peer_group: str            # what we compared against
@@ -51,6 +55,8 @@ class SurpriseCard:
     output_neuropils: List[str]
     input_cells: int
     output_cells: int
+    # Set by compute_related when a card is suggested from a current cell:
+    relation_reason: str = ""
 
     def as_template_dict(self):
         return asdict(self)
@@ -98,11 +104,23 @@ def _mean_std(values: List[float]) -> Tuple[float, float]:
 # Signal 1 — degree outliers
 # ---------------------------------------------------------------------------
 
+DEGREE_EXPLAINER = (
+    "A connectivity outlier is a neuron whose total number of synaptic "
+    "partners is much higher or lower than typical for its cell type. "
+    "When wiring breaks the pattern, the function often does too."
+)
+BRIDGE_EXPLAINER = (
+    "A cross-region bridge is a neuron whose input region and output region "
+    "form a pair almost no other cell makes. If a circuit links those two "
+    "regions, this neuron is one of just a few cells carrying it."
+)
+
+
 def score_degree_outliers(neuron_db) -> List[SurpriseCard]:
     """Z-score each neuron's total partner count (input_cells + output_cells)
     against peers of the same cell_type (or super_class)."""
 
-    by_peer: Dict[str, List[Tuple[int, int]]] = defaultdict(list)  # peer_key -> [(rid, degree)]
+    by_peer: Dict[str, List[Tuple[int, int]]] = defaultdict(list)
     for rid, nd in neuron_db.neuron_data.items():
         peer = _peer_key(nd)
         if not peer:
@@ -126,10 +144,18 @@ def score_degree_outliers(neuron_db) -> List[SurpriseCard]:
             direction = "more" if z > 0 else "fewer"
             ratio_str = _format_ratio(degree, mean)
             headline = (
-                f"Connects to {ratio_str} partners than other "
-                f"{peer} cells — {int(degree)} vs. peer average {int(mean)}."
+                f"Wired to {ratio_str} partners than typical {peer} cells."
                 if ratio_str
-                else f"{int(degree)} synaptic partners — {abs(z):.1f}σ from {peer} peers."
+                else f"Wired {abs(z):.1f}σ above the typical {peer} cell."
+            )
+            description = (
+                f"Most {peer} cells in the FlyWire connectome have around "
+                f"{int(mean)} synaptic partners. This one has {int(degree)} — "
+                f"a {direction}-than-typical wiring pattern that is "
+                f"{abs(z):.1f} standard deviations from the peer average. "
+                f"Cells this far from their cohort are usually doing something "
+                f"unusual: integrating across more inputs, fanning out wider, "
+                f"or sitting at a circuit bottleneck."
             )
             cards.append(SurpriseCard(
                 root_id=rid,
@@ -139,12 +165,14 @@ def score_degree_outliers(neuron_db) -> List[SurpriseCard]:
                 nt_type=nd.get("nt_type") or "",
                 side=nd.get("side") or "",
                 signal="degree_outlier",
+                signal_label="Connectivity outlier",
+                signal_explainer=DEGREE_EXPLAINER,
                 headline=headline,
+                description=description,
                 detail=(
                     f"z = {z:+.2f}, total partners = {int(degree)}, "
-                    f"peer mean = {mean:.1f}, peer σ = {std:.1f}, "
-                    f"n peers = {len(entries)}, peer group = {peer} "
-                    f"(direction: {direction} than typical)"
+                    f"peer mean = {mean:.1f}, σ = {std:.1f}, "
+                    f"n = {len(entries)} peers, group = {peer}."
                 ),
                 score=abs(z),
                 peer_group=peer,
@@ -214,10 +242,19 @@ def score_cross_region_bridges(neuron_db) -> List[SurpriseCard]:
         nd = neuron_db.neuron_data[rid]
         in_np, out_np = rarest_pair
         n_with = pair_counts[rarest_pair]
-        headline = (
-            f"Bridges {in_np} → {out_np} — only {n_with} other "
-            f"neuron{'s' if n_with != 1 else ''} in the connectome "
-            f"{'do' if n_with != 1 else 'does'} this."
+        # Headline stays tight (just the codes); rich roles go in the description.
+        headline = f"Connects {in_np} → {out_np}."
+        if n_with == 0:
+            rarity_phrase = "No other neuron in the connectome makes this same input→output pair."
+        elif n_with == 1:
+            rarity_phrase = "Only one other neuron in the connectome makes this same input→output pair."
+        else:
+            rarity_phrase = f"Only {n_with} other neurons in the connectome make this same input→output pair."
+        description = (
+            f"This cell takes input from {np_role(in_np)} and projects "
+            f"output to {np_role(out_np)}. {rarity_phrase} "
+            f"If a functional pathway links those regions, this neuron is "
+            f"one of the few cells carrying it."
         )
         cards.append(SurpriseCard(
             root_id=rid,
@@ -227,11 +264,14 @@ def score_cross_region_bridges(neuron_db) -> List[SurpriseCard]:
             nt_type=nd.get("nt_type") or "",
             side=nd.get("side") or "",
             signal="cross_region_bridge",
+            signal_label="Cross-region bridge",
+            signal_explainer=BRIDGE_EXPLAINER,
             headline=headline,
+            description=description,
             detail=(
                 f"bridge score = {score:.2f}, rarest pair = {in_np} → {out_np} "
-                f"(seen in {n_with}/{total_neurons} neurons, "
-                f"p = {rarest_p:.4f}); {len(set(pairs))} total bridge pairs."
+                f"(seen in {n_with}/{total_neurons} neurons, p = {rarest_p:.4f}); "
+                f"{len(set(pairs))} bridge pairs total."
             ),
             score=score,
             peer_group="connectome-wide",
@@ -423,17 +463,50 @@ def compute_related(neuron_db, root_id: int, version: str, n: int = 12) -> List[
             if rid_other in surprise_index and rid_other != root_id:
                 candidate_scores[rid_other] = candidate_scores.get(rid_other, 0) + min(sim_score, 5) * 0.4
 
+    # ---- Build a "why is this here" reason for each candidate ----
+    def reason_for(rid_other: int) -> str:
+        bits = []
+        if rid_other in partner_ids:
+            bits.append("synapses with this cell")
+        # Shared rare neuropil pair?
+        nd_other = neuron_db.neuron_data.get(rid_other) or {}
+        other_pairs = set()
+        for i_np in nd_other.get("input_neuropils") or []:
+            for o_np in nd_other.get("output_neuropils") or []:
+                if i_np != o_np:
+                    other_pairs.add((i_np, o_np))
+        shared = self_pairs & other_pairs
+        if shared:
+            sample_pair = sorted(shared)[0]
+            in_p = np_short(sample_pair[0]) or sample_pair[0]
+            out_p = np_short(sample_pair[1]) or sample_pair[1]
+            bits.append(f"shares the rare {in_p} → {out_p} bridge")
+        # NBLAST-similar shape?
+        if isinstance(sim, dict) and rid_other in sim:
+            bits.append("similar 3D shape")
+        if not bits:
+            return "Surfaced from the global surprise feed."
+        return "Here because it " + " · ".join(bits) + "."
+
     if not candidate_scores:
-        # Fallback: still serve content from the global feed (excluding self) so
-        # the journey never dead-ends.
         cards = sorted(surprise_index.values(), key=lambda c: c.score, reverse=True)
-        return [c for c in cards if c.root_id != root_id][:n]
+        out = []
+        for c in cards:
+            if c.root_id == root_id:
+                continue
+            c2 = SurpriseCard(**{**asdict(c), "relation_reason": reason_for(c.root_id)})
+            out.append(c2)
+            if len(out) >= n:
+                break
+        return out
 
     ranked = sorted(candidate_scores.items(), key=lambda p: p[1], reverse=True)
     out = []
     for rid_other, _ in ranked:
         if rid_other in surprise_index:
-            out.append(surprise_index[rid_other])
+            base = surprise_index[rid_other]
+            c2 = SurpriseCard(**{**asdict(base), "relation_reason": reason_for(rid_other)})
+            out.append(c2)
         if len(out) >= n:
             break
     return out
